@@ -3,6 +3,7 @@ from scrapy import Spider
 from scrapy.selector import Selector
 from scrapy.http import TextResponse as response
 from InternTracker.items import InternshipPosting
+from Logger.logger import normal_site_logger
 
 def dateformat(date) :
     date=date.split(" ")
@@ -24,41 +25,43 @@ class Hellointern(scrapy.Spider) :
 
     name = "hellointern_spy"
     start_urls =["https://www.hellointern.com/search/by_filters"]
-
-    def parse(self, response) :
-        roles = response.css('.title_salary span a::text').getall()
-        companies = response.css(".name_span a::text").getall()
-        locations = response.css(".location_span::text").getall()   
-        locations = [x.replace('End Date: ','').replace("\r\n","").strip() for x in locations]
-        locations=locations[0::2]
-        start_dates = response.css(".salary_span b::text").getall()
-        start_dates=[x.replace(",","").strip() for x in start_dates]
-        stipends = response.css(".salary_span::text").getall()  
-        stipends=[x.replace('Start Date: ','').replace("Unpaid","0").replace("","0").replace("(per month)","").strip() for x in stipends]
-        stipends=stipends[0::2]
-        link=response.css(".title_span a::attr(href)").getall()
-        posting_date=response.css(".day::text").getall()
-        posting_my=response.css(".month_year::text").getall()    
-        date=[]
-        #end_date=resposne.css(".location_span b").getall()
-        for i in range(len(roles)):
-            date.append(posting_date[i]+ " " + posting_my[i])
-            date[i]=dateformat(date[i])
-        
-        for i in range(len(roles)):
-            start_dates[i]=dateformat2(start_dates[i])
-        
-        for i in range(len(roles)):
-            posting = InternshipPosting()
-            posting['role'] = roles[i]
-            posting['company_name'] = companies[i]
-            posting['location'] = locations[i]
-            posting['start_date'] = start_dates[i]
-            posting['stipendmin']= int(stipends[i].strip().split(" ")[0])
-            posting['stipendmax']= int(stipends[i].strip().split(" ")[0])
-            posting['deadline'] = ""#dateformat(deadlines[i])
-            posting['link'] = "https://www.hellointern.com" + link[i]
-            posting['number_of_applicants'] = 0
-            posting['posting_date'] = date[i]
-            posting['category_id'] = 0
-            yield posting
+    try :
+        def parse(self, response) :
+            roles = response.css('.title_salary span a::text').getall()
+            companies = response.css(".name_span a::text").getall()
+            locations = response.css(".location_span::text").getall()   
+            locations = [x.replace('End Date: ','').replace("\r\n","").strip() for x in locations]
+            locations=locations[0::2]
+            start_dates = response.css(".salary_span b::text").getall()
+            start_dates=[x.replace(",","").strip() for x in start_dates]
+            stipends = response.css(".salary_span::text").getall()  
+            stipends=[x.replace('Start Date: ','').replace("Unpaid","0").replace("","0").replace("(per month)","").strip() for x in stipends]
+            stipends=stipends[0::2]
+            link=response.css(".title_span a::attr(href)").getall()
+            posting_date=response.css(".day::text").getall()
+            posting_my=response.css(".month_year::text").getall()    
+            date=[]
+            #end_date=resposne.css(".location_span b").getall()
+            for i in range(len(roles)):
+                date.append(posting_date[i]+ " " + posting_my[i])
+                date[i]=dateformat(date[i])
+            
+            for i in range(len(roles)):
+                start_dates[i]=dateformat2(start_dates[i])
+            
+            for i in range(len(roles)):
+                posting = InternshipPosting()
+                posting['role'] = roles[i]
+                posting['company_name'] = companies[i]
+                posting['location'] = locations[i]
+                posting['start_date'] = start_dates[i]
+                posting['stipendmin']= int(stipends[i].strip().split(" ")[0])
+                posting['stipendmax']= int(stipends[i].strip().split(" ")[0])
+                posting['deadline'] = ""#dateformat(deadlines[i])
+                posting['link'] = "https://www.hellointern.com" + link[i]
+                posting['number_of_applicants'] = 0
+                posting['posting_date'] = date[i]
+                posting['category_id'] = 0
+                yield posting
+    except Exception as e :
+        normal_site_logger.error(e)
